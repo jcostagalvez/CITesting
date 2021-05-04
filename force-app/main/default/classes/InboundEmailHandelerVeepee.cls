@@ -3,6 +3,8 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
     private List<Case> caseToUpdate;
     private String emailNumberOrder;
 	private String emailMessage;
+    private String emailSubject;
+    
     
     public Messaging.InboundEmailResult handleInboundEmail(Messaging.InboundEmail email, Messaging.InboundEnvelope envolpe){
 
@@ -21,6 +23,12 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
   
 
         return result;
+    }
+
+    private Group getMarketPlaceQueue(){
+        return [SELECT Id 
+                FROM Group 
+                WHERE  Type = 'Queue' AND name = 'Marketplace_Queue'];
     }
 
     private void setCase(Messaging.InboundEmail email){
@@ -44,11 +52,18 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
         Account cuentaPinkConect = [SELECT Id
                                     FROM Account
                                     LIMIT 1];
+        Group marketPlaceQueue = getMarketPlaceQueue();
 
         Case  inboundCase = new Case(
             AccountId = cuentaPinkConect.Id,
             TXT_OrderNumber__c = this.emailNumberOrder,
-            Description = this.emailMessage
+            Origin = '',
+            PICK_Locale__c ='fr_FR',
+            PICK_Language__c = 'fr',
+            PICK_CommercialChannel__c = '',
+            Subject = this.emailSubject,
+            Description = this.emailMessage,
+            OwnerId = marketPlaceQueue.Id
         );
 
         try {
