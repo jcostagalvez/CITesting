@@ -13,12 +13,17 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
 
         setCase(email);
 
-        if(this.caseToUpdate.size() > 0){
+        System.debug('Tamaño de lo que antes que se encuentra ' + this.caseToUpdate.size());            
+
+        if(this.caseToUpdate.size() != 0){
+            System.debug('Paso 4 ----->> Actualiza el caso');
 
             updateCase(email);
-
         }else{
+            System.debug('Paso 2 ----->> Crea el caso');
+
             createCase();
+
         }
         
   
@@ -33,24 +38,26 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
     }
 
     private void setCase(Messaging.InboundEmail email){
-		
-		Matcher numOrderPattern = Pattern.compile('(?<=\\s)\\d\\w*').matcher(email.subject);
-        Matcher messagePattern = Pattern.compile('(?<=Message:\\s)[\\w\\s\\W\\d]*').matcher(email.plainTextBody);
+		integer controller = 0;
+
+		Matcher numOrderPattern = Pattern.compile('\\d\\w*').matcher(email.subject);
 
         
-		while(numOrderPattern.find() && messagePattern.find()) {
+		while(numOrderPattern.find() && controller < 1) {
+            controller += 1;
     		this.emailNumberOrder = numOrderPattern.group(0);
-            this.emailMessage = messagePattern.group(0);
+            System.debug('Paso 1 ----->> Se ha encontrado este email.subject ' + numOrderPattern.group(0));
+
 		}
 
         System.debug('Paso 1 ----->> Se ha encontrado este email.subject ' + email.subject);
         System.debug('Paso 1 ----->> Se ha encontrado este numberOrder ' + this.emailNumberOrder);
 
-        this.caseToUpdate= [SELECT Id, Status
+        this.caseToUpdate = [SELECT Id, Status
                             FROM Case 
                             WHERE TXT_OrderNumber__c =:  this.emailNumberOrder LIMIT 1];
 
-        System.debug('Paso 1 ----->> Se ha encontrado este caso ' + this.caseToUpdate);
+        System.debug('Tamaño de lo que antes que se encuentra ' + this.caseToUpdate.size());            
     }
 
     private void createCase(){
@@ -58,7 +65,9 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
         Account cuentaPinkConect = [SELECT Id
                                     FROM Account
                                     LIMIT 1];
+        System.debug('cuentaPinkConect ----->> cuentaPinkConect ' + cuentaPinkConect);
         Group marketPlaceQueue = getMarketPlaceQueue();
+        System.debug('marketPlaceQueue ----->> marketPlaceQueue ' + marketPlaceQueue);
 
         Case  inboundCase = new Case(
             AccountId = cuentaPinkConect.Id,
