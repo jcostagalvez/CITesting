@@ -9,6 +9,7 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
     public Messaging.InboundEmailResult handleInboundEmail(Messaging.InboundEmail email, Messaging.InboundEnvelope envolpe){
 
         Messaging.InboundEmailResult result = new Messaging.InboundEmailResult();
+        System.debug('Paso 0 ----->> Entra en la clase');
 
         setCase(email);
 
@@ -42,9 +43,14 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
             this.emailMessage = messagePattern.group(0);
 		}
 
+        System.debug('Paso 1 ----->> Se ha encontrado este email.subject ' + email.subject);
+        System.debug('Paso 1 ----->> Se ha encontrado este numberOrder ' + this.emailNumberOrder);
+
         this.caseToUpdate= [SELECT Id, Status
                             FROM Case 
                             WHERE TXT_OrderNumber__c =:  this.emailNumberOrder LIMIT 1];
+
+        System.debug('Paso 1 ----->> Se ha encontrado este caso ' + this.caseToUpdate);
     }
 
     private void createCase(){
@@ -70,6 +76,8 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
 
             insert inboundCase;
 
+            System.debug('Paso 2 ----->> Se ha creado este caso ' + inboundCase.Id);
+
         } catch (DmlException e) {
 
         }
@@ -91,7 +99,7 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
         try {
 
             update CaseToUpdate;
-            insert msg;
+            //insert msg;
 
         } catch (DmlException e) {
 
