@@ -2,9 +2,6 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
 
     private List<Case> caseToUpdate;
     private String emailNumberOrder;
-	private String emailMessage;
-    private String emailSubject;
-    
     
     public Messaging.InboundEmailResult handleInboundEmail(Messaging.InboundEmail email, Messaging.InboundEnvelope envolpe){
 
@@ -30,7 +27,8 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
             Headers = email.headers.toString(),
             FromName = email.fromName,
             Subject = email.subject,
-            RelatedToId = Id
+            RelatedToId = Id,
+            Incoming = true
         );
         
         return msg;
@@ -70,12 +68,12 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
         Case  inboundCase = new Case(
             AccountId = cuentaPinkConect.Id,
             TXT_OrderNumber__c = this.emailNumberOrder,
-            Origin = '',
+            Origin = 'O1',
             PICK_Locale__c ='fr_FR',
             PICK_Language__c = 'fr',
-            PICK_CommercialChannel__c = '',
-            Subject = this.emailSubject,
-            Description = this.emailMessage,
+            PICK_CommercialChannel__c = 'CC9',
+            Subject = email.subject,
+            Description = email.plainTextBody,
             OwnerId = marketPlaceQueue.Id
         );
 
@@ -90,8 +88,12 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
             System.debug('Ha habido un erro al insertar el caso ---->' + e);
         }
 
-       emailMessage msg = convertEmailInMessage(email, inboundCase.Id);
+// HASTA QUE SE CLARIFIQUE SI ES NECESARIO RECOGER EL PRIMER EMAIL, ESTO SE VA A QUEDAR COMENTADO
 
+
+/*
+       emailMessage msg = convertEmailInMessage(email, inboundCase.Id);
+   
        try {
 
            insert msg;
@@ -101,6 +103,7 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
         System.debug('Ha habido un erro al insertar el message ---->' + e);
 
        }
+       */
     }
 
     private void UpdateCase(Messaging.InboundEmail email){
