@@ -2,15 +2,28 @@
 public with sharing class testInboundEmailHandelerVeepee {
     @isTest
     public static void testInboundEmail() {
+
+      RecordType standardAccount =  [SELECT Id FROM RecordType WHERE DeveloperName = 'Standard_B2B' and SObjectType = 'Account'];
+
         Account cuentaPinkConect = new Account(
-            Name = 'Pink Connect'
+          Name = 'Pink Connect',
+          recordTypeId = '0123X000001A3KzQAK'
         );
 
-        insert cuentaPinkConect;
+        Insert cuentaPinkConect;
+
+        System.debug('Es esta cuenta personal ------>>>>>>' + cuentaPinkConect.IsPersonAccount);
+
+        /*Contact contactoPinkConect = new Contact(
+          LastName = 'Pink Connect'
+        );
+
+        insert contactoPinkConect;
+        */
 
         Case caseToInsert = New Case( 
             TXT_OrderNumber__c = '210212V041776886',
-            AccountId = cuentaPinkConect.Id
+            AccountId = cuentaPinkConect.Id,
         );
 
         insert caseToInsert;

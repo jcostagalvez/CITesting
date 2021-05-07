@@ -1,22 +1,41 @@
-public with sharing class InboundEmailHandelerVeepee implements Messaging.InboundEmailHandler{
+public with sharing class MarketPlaceServiceHandeler {
 
     private List<Case> caseToUpdate;
     private String emailNumberOrder;
+    private MARKET_PLACES_EMAIL_SERVICE__mdt caseSettings;
     
-    public Messaging.InboundEmailResult handleInboundEmail(Messaging.InboundEmail email, Messaging.InboundEnvelope envolpe){
+    public MarketPlaceServiceHandeler(Messaging.InboundEmail email) {
 
-        Messaging.InboundEmailResult result = new Messaging.InboundEmailResult();
-        setCase(email);
-        if(this.caseToUpdate.size() != 0){
-            updateCase(email);
+        setCaseSettings(email.toAddresses);
+
+        if(this.caseSettings.DeveloperName != 'La redoute'){
+
+            setCase(email);
+
+            if(this.caseToUpdate.size() != 0){
+
+                updateCase(email);
+
+            }else{
+
+                createCase(email);
+            }
+
         }else{
-            createCase(email);
 
         }
-        
-  
+    }
 
-        return result;
+    private void setCaseSettings (List<String> EmailAdress){
+
+        MARKET_PLACES_EMAIL_SERVICE__mdt caseSetting = [SELECT DeveloperName, Canal_comercial__c, Estado_a_cambiar_el_caso__c, Lenguaje__c, locale__c, Nombre_de_la_cuenta__c, Nombre_de_la_lista__c, Nombre_del_contacto__c,
+                                                        Origen_del_caso__c, Patron_de_busqueda_de_Number_order__c
+                                                        FROM MARKET_PLACES_EMAIL_SERVICE__mdt
+                                                        WHERE Direccion_de_email__c IN: EmailAdress
+                                                        LIMIT 1];
+
+        this.caseSettings = caseSetting;
+
     }
 
     private emailMessage convertEmailInMessage(Messaging.InboundEmail email, String Id){
@@ -33,19 +52,18 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
         
         return msg;
     }
+    
     private Group getMarketPlaceQueue(){
-        return [SELECT Id 
-                FROM Group 
-                WHERE  Type = 'Queue' AND DeveloperName = 'Marketplace_Queue'];
+
+        return [SELECT Id FROM Group WHERE  Type = 'Queue' AND DeveloperName =: this.caseSettings.Nombre_de_la_lista__c];
     }
 
     private void setCase(Messaging.InboundEmail email){
 
 		integer controller = 0;
 
-		Matcher numOrderPattern = Pattern.compile('\\d\\w*').matcher(email.subject);
+		Matcher numOrderPattern = Pattern.compile(this.caseSettings.Patron_de_busqueda_de_Number_order__c).matcher(email.subject);
 
-        
 		while(numOrderPattern.find() && controller < 1) {
             controller += 1;
     		this.emailNumberOrder = numOrderPattern.group(0);
@@ -59,19 +77,28 @@ public with sharing class InboundEmailHandelerVeepee implements Messaging.Inboun
 
     private void createCase(Messaging.InboundEmail email){
 
-        Account cuentaPinkConect = [SELECT Id
+        Account cuentaPinkConect = [SELECT Id, MAIL_ExternalId__c, Name,
+                                    (SELECT Id 
+                                    FROM Contacts
+                                    WHERE Name =: this.caseSettings.Nombre_del_contacto__c
+                                    Limit 1)
                                     FROM Account
+                                    WHERE Name =: this.caseSettings.Nombre_de_la_cuenta__c
                                     LIMIT 1];
 
+        
+        Contact contactoPinkConect = cuentaPinkConect.Contacts;
         Group marketPlaceQueue = getMarketPlaceQueue();
 
         Case  inboundCase = new Case(
+            ContactId = contactoPinkConect.Id,
             AccountId = cuentaPinkConect.Id,
             TXT_OrderNumber__c = this.emailNumberOrder,
-            Origin = 'O1',
-            PICK_Locale__c ='fr_FR',
-            PICK_Language__c = 'fr',
-            PICK_CommercialChannel__c = 'CC9',
+            MAIL_ClientEmail__c = cuentaPinkConect.MAIL_ExternalId__c,
+            Origin = this.caseSettings.Origen_del_caso__c,
+            PICK_Locale__c = this.caseSettings.locale__c,
+            PICK_Language__c = this.caseSettings.Lenguaje__c,
+            PICK_CommercialChannel__c = this.caseSettings.Canal_comercial__c,
             Subject = email.subject,
             Description = email.plainTextBody,
             OwnerId = marketPlaceQueue.Id
